@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class Controller implements Runnable{
 
     private static final Logger log = LogManager.getLogger(Controller.class);
-    static ArrayList<Partition> topicpartitions3 = new ArrayList<>();
+    static ArrayList<Partition> topicpartitions1 = new ArrayList<>();
     static int size=1;
 
     static double wsla = 5.0;
@@ -33,11 +33,11 @@ public class Controller implements Runnable{
         List<URI> partitions = new ArrayList<>();
         try {
             partitions = Arrays.asList(
-                    new URI(Constants.topic3p0),
-                    new URI(Constants.topic3p1),
-                    new URI(Constants.topic3p2),
-                    new URI(Constants.topic3p3),
-                    new URI(Constants.topic3p4)
+                    new URI(Constants.topic1p0),
+                    new URI(Constants.topic1p1),
+                    new URI(Constants.topic1p2),
+                    new URI(Constants.topic1p3),
+                    new URI(Constants.topic1p4)
             );
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -45,11 +45,11 @@ public class Controller implements Runnable{
         List<URI> partitionslag = new ArrayList<>();
         try {
             partitionslag = Arrays.asList(
-                    new URI(Constants.topic3p0lag),
-                    new URI(Constants.topic3p1lag),
-                    new URI(Constants.topic3p2lag),
-                    new URI(Constants.topic3p3lag),
-                    new URI(Constants.topic3p4lag)
+                    new URI(Constants.topic1p0lag),
+                    new URI(Constants.topic1p1lag),
+                    new URI(Constants.topic1p2lag),
+                    new URI(Constants.topic1p3lag),
+                    new URI(Constants.topic1p4lag)
             );
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -83,7 +83,7 @@ public class Controller implements Runnable{
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
-            topicpartitions3.get(partition).setArrivalRate(partitionArrivalRate);
+            topicpartitions1.get(partition).setArrivalRate(partitionArrivalRate);
             totalarrivalstopic1 += partitionArrivalRate;
             partition++;
         }
@@ -97,7 +97,7 @@ public class Controller implements Runnable{
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
-            topicpartitions3.get(partition).setLag(partitionLag);
+            topicpartitions1.get(partition).setLag(partitionLag);
             totallag += partitionLag;
             partition++;
         }
@@ -105,8 +105,8 @@ public class Controller implements Runnable{
         log.info("totalLag for topic 1 {}", totallag);
 
         for (int i = 0; i <= 4; i++) {
-            log.info("partition {} for topic 1 has the following arrival rate {} and lag {}", i, topicpartitions3.get(i).getArrivalRate(),
-                    topicpartitions3.get(i).getLag());
+            log.info("partition {} for topic 1 has the following arrival rate {} and lag {}", i, topicpartitions1.get(i).getArrivalRate(),
+                    topicpartitions1.get(i).getLag());
         }
         log.info("******************");
 
@@ -116,7 +116,7 @@ public class Controller implements Runnable{
     @Override
     public void run() {
         for (int i = 0; i <= 4; i++) {
-            topicpartitions3.add(new Partition(i, 0, 0));
+            topicpartitions1.add(new Partition(i, 0, 0));
 
         }
         log.info("Warming for 15 seconds.");

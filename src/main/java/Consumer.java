@@ -63,10 +63,8 @@ public class Consumer {
         return result;
     }
 
-
     public List<Partition> getAssignedPartitions() {
         return assignedPartitions;
     }
-
 
 }

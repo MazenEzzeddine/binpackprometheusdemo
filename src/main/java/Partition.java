@@ -1,15 +1,12 @@
 public class Partition implements Comparable<Partition> {
-
     private int id;
     private long lag;
     private double arrivalRate;
-    private double previousArrivalRate;
 
     public Partition(int id, long lag, double arrivalRate) {
         this.id = id;
         this.lag = lag;
         this.arrivalRate = arrivalRate;
-
     }
 
     public int getId() {
@@ -28,7 +25,6 @@ public class Partition implements Comparable<Partition> {
     public double getArrivalRate() {
         return arrivalRate;
     }
-
     public void setArrivalRate(double arrivalRate) {
         this.arrivalRate = arrivalRate;
     }

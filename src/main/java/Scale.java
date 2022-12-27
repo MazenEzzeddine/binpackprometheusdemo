@@ -8,16 +8,12 @@ import java.time.Instant;
 import java.util.*;
 
 public class Scale {
-
-
     static Instant lastUpScaleDecision = Instant.now();
     static Instant lastDownScaleDecision = Instant.now();
     //static int size = 1;
     static double dynamicAverageMaxConsumptionRate = 0.0;
     static double wsla = 5.0;
     static List<Consumer> assignment = new ArrayList<>();
-
-
     private static final Logger log = LogManager.getLogger(Scale.class);
 
 
@@ -25,7 +21,7 @@ public class Scale {
         log.info("Inside binPackAndScale ");
         List<Consumer> consumers = new ArrayList<>();
         int consumerCount = 0;
-        List<Partition> parts = new ArrayList<>(Controller.topicpartitions3);
+        List<Partition> parts = new ArrayList<>(Controller.topicpartitions1);
         dynamicAverageMaxConsumptionRate = 95.0;//230*0.7; //0.75; //225.0;//180.0;//95*0.8; //90.0;
 
         long maxLagCapacity;
@@ -84,7 +80,6 @@ public class Scale {
         // copy consumers and partitions for fair assignment
         List<Consumer> fairconsumers = new ArrayList<>(consumers.size());
         List<Partition> fairpartitions = new ArrayList<>();
-
         for (Consumer cons : consumers) {
             fairconsumers.add(new Consumer(cons.getId(), maxLagCapacity, dynamicAverageMaxConsumptionRate));
             fairpartitions.addAll(cons.getAssignedPartitions());
@@ -101,7 +96,8 @@ public class Scale {
         //1. list of consumers that will contain the fair assignment
         //2. list of consumers out of the bin pack.
         //3. the partition sorted in their decreasing arrival rate.
-        assignPartitionsFairly(fairconsumers, consumers, fairpartitions);
+       // List<Consumer> fairconsumers = new ArrayList<>(consumers.size());
+        assignPartitionsFairly(fairconsumers, consumers, parts);
       /*  for (Consumer cons : fairconsumers) {
             log.info("fair consumer {} is assigned the following partitions", cons.getId());
             for (Partition p : cons.getAssignedPartitions()) {
@@ -122,14 +118,11 @@ public class Scale {
         }// Track total lag assigned to each consumer (for the current topic)
         final Map<Integer, Double> consumerTotalArrivalRate = new HashMap<>(consumers.size());
         final Map<Integer, Integer> consumerTotalPartitions = new HashMap<>(consumers.size());
-        final Map<Integer, Double> consumerAllowableArrivalRate = new HashMap<>(consumers.size());
         for (Consumer cons : consumers) {
             consumerTotalArrivalRate.put(cons.getId(), 0.0);
-            consumerAllowableArrivalRate.put(cons.getId(),95.0/*225.0*/ /*180.0 /*95.0*0.8*/);
             consumerTotalPartitions.put(cons.getId(), 0);
 
         }
-
         // might want to remove, the partitions are sorted anyway.
         //First fit decreasing
         partitionsArrivalRate.sort((p1, p2) -> {
@@ -148,14 +141,9 @@ public class Scale {
                             Double.compare(c1.getValue(), c2.getValue()) != 0 ?
                                     Double.compare(c1.getValue(), c2.getValue()) : c1.getKey().compareTo(c2.getKey())).getKey();
 
-            int memberIndex;
-            for (memberIndex = 0; memberIndex < consumers.size(); memberIndex++) {
-                if (assignment.get(memberIndex).getId() == (memberId)) {
-                    break;
-                }
-            }
 
-            assignment.get(memberIndex).assignPartition(partition);
+
+            assignment.get(memberId).assignPartition(partition);
             consumerTotalArrivalRate.put(memberId, consumerTotalArrivalRate.getOrDefault(memberId, 0.0) + partition.getArrivalRate());
             consumerTotalPartitions.put(memberId, consumerTotalPartitions.getOrDefault(memberId, 0) + 1);
             /*log.info(
@@ -173,15 +161,11 @@ public class Scale {
             log.info("cooldown habibi");
             return;
         }
-
         log.info("Currently we have this number of consumers for cg1 {}", currentsize);
         int neededsize = binPackAndScale();
         log.info("We currently need the following consumers (as per the bin pack) for cg 1 {}", neededsize);
-
         int replicasForscale = neededsize - currentsize;
-
         Controller.size= neededsize;
-
         // but is the assignmenet the same
         if (replicasForscale == 0) {
             log.info("No need to autoscale");
@@ -194,26 +178,23 @@ public class Scale {
             }*/
         } else if (replicasForscale > 0) {
             //if (Duration.between(lastUpScaleDecision, Instant.now()).toSeconds() < 15) return;
-
             //TODO IF and Else IF can be in the same logic
             log.info("We have to upscale cg1 by {}", replicasForscale);
             try (final KubernetesClient k8s = new DefaultKubernetesClient()) {
 
-                k8s.apps().deployments().inNamespace("default").withName("cons1persec3").scale(neededsize);
+                k8s.apps().deployments().inNamespace("default").withName("cons1persec").scale(neededsize);
                 log.info("I have Upscaled cg1  you should have {}", neededsize);
                 lastUpScaleDecision = Instant.now();
             }
         } else {
             //if (Duration.between(lastDownScaleDecision, Instant.now()).toSeconds() < 15) return;
             log.info("We have to downscale cg1 by {}", replicasForscale);
-
             try (final KubernetesClient k8s = new DefaultKubernetesClient()) {
-                k8s.apps().deployments().inNamespace("default").withName("cons1persec3").scale(neededsize);
+                k8s.apps().deployments().inNamespace("default").withName("cons1persec").scale(neededsize);
                 log.info("I have Downscaled cg1 you should have {}", neededsize);
                 lastUpScaleDecision = Instant.now();
                 lastDownScaleDecision = Instant.now();
             }
         }
     }
-
 }
