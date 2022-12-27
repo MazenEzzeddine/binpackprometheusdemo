@@ -53,9 +53,6 @@ public class Scale {
         Consumer consumer = null;
         for (Partition partition : parts) {
             for (Consumer cons : consumers) {
-                //TODO externalize these choices on the inout to the FFD bin pack
-                // TODO  hey stupid use instatenous lag instead of average lag.
-                // TODO average lag is a decision on past values especially for long DI.
                 if (/*cons.getRemainingLagCapacity() >= partition.getLag() &&*/
                         cons.getRemainingArrivalCapacity() >= partition.getArrivalRate()) {
                     cons.assignPartition(partition);
@@ -85,25 +82,8 @@ public class Scale {
             fairpartitions.addAll(cons.getAssignedPartitions());
         }
 
-        //sort partitions in descending order for debugging purposes
-        fairpartitions.sort(new Comparator<>() {
-            @Override
-            public int compare(Partition o1, Partition o2) {
-                return Double.compare(o2.getArrivalRate(), o1.getArrivalRate());
-            }
-        });
 
-        //1. list of consumers that will contain the fair assignment
-        //2. list of consumers out of the bin pack.
-        //3. the partition sorted in their decreasing arrival rate.
-       // List<Consumer> fairconsumers = new ArrayList<>(consumers.size());
         assignPartitionsFairly(fairconsumers, consumers, parts);
-      /*  for (Consumer cons : fairconsumers) {
-            log.info("fair consumer {} is assigned the following partitions", cons.getId());
-            for (Partition p : cons.getAssignedPartitions()) {
-                log.info("fair Partition {}", p.getId());
-            }
-        }*/
         assignment = fairconsumers;
         return consumers.size();
     }
@@ -121,10 +101,8 @@ public class Scale {
         for (Consumer cons : consumers) {
             consumerTotalArrivalRate.put(cons.getId(), 0.0);
             consumerTotalPartitions.put(cons.getId(), 0);
-
         }
-        // might want to remove, the partitions are sorted anyway.
-        //First fit decreasing
+
         partitionsArrivalRate.sort((p1, p2) -> {
             // If lag is equal, lowest partition id first
             if (p1.getArrivalRate() == p2.getArrivalRate()) {
@@ -133,15 +111,13 @@ public class Scale {
             // Highest arrival rate first
             return Double.compare(p2.getArrivalRate(), p1.getArrivalRate());
         });
+
         for (Partition partition : partitionsArrivalRate) { //highest to lowest
-            // Assign to the consumer with least number of partitions, then smallest total lag, then smallest id arrival rate
-            // returns the consumer with lowest assigned partitions, if all assigned partitions equal returns the min total arrival rate
+
             final Integer memberId = Collections
                     .min(consumerTotalArrivalRate.entrySet(), (c1, c2) ->
                             Double.compare(c1.getValue(), c2.getValue()) != 0 ?
                                     Double.compare(c1.getValue(), c2.getValue()) : c1.getKey().compareTo(c2.getKey())).getKey();
-
-
 
             assignment.get(memberId).assignPartition(partition);
             consumerTotalArrivalRate.put(memberId, consumerTotalArrivalRate.getOrDefault(memberId, 0.0) + partition.getArrivalRate());
